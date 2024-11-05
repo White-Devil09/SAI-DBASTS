@@ -1,2 +1,10 @@
 db_data/
 .env
+.vscode/
+*.synctex(busy)
+.DS_Store
+*~
+*.backup
+*.bak
+*.swp
+*.tmp
