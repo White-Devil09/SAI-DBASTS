@@ -1,0 +1,3 @@
+1) Speaker Identification Notebook - https://www.kaggle.com/code/moussasofia/speaker-identification-2024
+2) Antispoofing audio blog         - https://antispoofing.org/audio-replay-attacks-and-countermeasures-against-them/
+3) Synthesis_speech detection      - https://github.com/asvspoof/end-to-end-synthetic-speech-detection
