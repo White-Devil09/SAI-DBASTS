@@ -2,3 +2,4 @@
 2) Antispoofing audio blog         - https://antispoofing.org/audio-replay-attacks-and-countermeasures-against-them/
 3) Synthesis_speech detection      - https://github.com/asvspoof/end-to-end-synthetic-speech-detection
 4) Chat GPT behavioural biometric  - https://chatgpt.com/share/67304345-6a38-800e-b614-fddc28eb3e6f
+5) Liveliness detection            - https://www.kaggle.com/code/janvisoni23/deep-fake-voice-recognition
