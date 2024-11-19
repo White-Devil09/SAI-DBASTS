@@ -1,16 +1,17 @@
-// myproject/frontend/myapp/src/App.js
-import React, { useEffect, useState } from 'react';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import RegistrationPage from "./components/RegistrationPage";
+import LoginPage from "./components/LoginPage";
 
 function App() {
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    fetch('http://localhost:8000/')
-      .then((response) => response.json())
-      .then((data) => setMessage(data.message));
-  }, []);
-
-  return <div>{message}</div>;
+    return (
+        <Router>
+            <Routes>
+                <Route path="/register" element={<RegistrationPage />} />
+                <Route path="/login" element={<LoginPage />} />
+            </Routes>
+        </Router>
+    );
 }
 
 export default App;
