@@ -7,22 +7,19 @@ from .crud import get_user_by_email, create_user, verify_user_password
 from .schemas import UserCreate, LoginRequest
 from .encryption import encrypt_voice_data, decrypt_voice_data
 from .encryption import extract_mfcc, extract_log_mel_spectrogram
-from .antispoof import AntiSpoofingModel
+# from .antispoof import AntiSpoofingModel
 import shutil
 from collections import defaultdict
 from datetime import datetime, timedelta
 import logging
 from pythonjsonlogger import jsonlogger
 
-# Configure logger
 logger = logging.getLogger("voice_auth")
 logger.setLevel(logging.INFO)
 
-# File handler for persistent logs
 file_handler = logging.FileHandler("auth_activity.log")
 file_handler.setLevel(logging.INFO)
 
-# JSON log formatter for better structure
 formatter = jsonlogger.JsonFormatter("%(asctime)s %(name)s %(levelname)s %(message)s")
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
@@ -30,7 +27,7 @@ logger.addHandler(file_handler)
 
 failed_attempts = defaultdict(list)
 Base.metadata.create_all(bind=engine)
-anti_spoofing_model = AntiSpoofingModel(model_path="../weights/antispoofing_model.pth")
+# anti_spoofing_model = AntiSpoofingModel(model_path="../weights/antispoofing_model.pth")
 
 app = FastAPI()
 
@@ -112,7 +109,8 @@ def login_with_voice(email: str, voice_file: UploadFile = File(...), db: Session
         shutil.copyfileobj(voice_file.file, buffer)
 
     log_mel_features = extract_log_mel_spectrogram(file_path)
-    spoof_score = anti_spoofing_model.predict(log_mel_features)
+    # spoof_score = anti_spoofing_model.predict(log_mel_features)
+    spoof_score = 0.1  # Placeholder spoof score
 
     if spoof_score > 0.5:
         logger.warning({
