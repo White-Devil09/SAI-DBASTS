@@ -14,15 +14,12 @@ from datetime import datetime, timedelta
 import logging
 from pythonjsonlogger import jsonlogger
 
-# Configure logger
 logger = logging.getLogger("voice_auth")
 logger.setLevel(logging.INFO)
 
-# File handler for persistent logs
 file_handler = logging.FileHandler("auth_activity.log")
 file_handler.setLevel(logging.INFO)
 
-# JSON log formatter for better structure
 formatter = jsonlogger.JsonFormatter("%(asctime)s %(name)s %(levelname)s %(message)s")
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
