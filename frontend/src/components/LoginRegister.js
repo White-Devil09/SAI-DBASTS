@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { FaUser, FaLock, FaEnvelope, FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 
@@ -101,6 +101,20 @@ const Button = styled.button`
   }
 `;
 
+const InLink = styled.button`
+    color: white;
+    background: transparent;
+    border: none;
+    margin: 0 10px;
+    font-size: 14.5px;
+    cursor: pointer;
+    font-weight: 600;
+
+    &:hover {
+        text-decoration: underline;
+    }
+`;
+
 const RegisterLink = styled.div`
   font-size: 14.5px;
   text-align: center;
@@ -139,7 +153,7 @@ const LoginRegister = () => {
     const [timer, setTimer] = useState(10);
     const [mediaRecorder, setMediaRecorder] = useState(null);
     const [audioChunks, setAudioChunks] = useState([]);
-    
+
     const registerLink = () => setAction(true);
     const loginLink = () => setAction(false);
     const apiUrl = process.env.REACT_APP_API_URL;
@@ -169,13 +183,13 @@ const LoginRegister = () => {
         }
     };
 
-    const handleStopRecording = () => {
+    const handleStopRecording = useCallback(() => {
         if (mediaRecorder) {
             mediaRecorder.stop();
             setRecording(false);
             setTimer(0);
         }
-    };
+    }, [mediaRecorder]);
 
     useEffect(() => {
         let interval;
@@ -187,9 +201,10 @@ const LoginRegister = () => {
             handleStopRecording();
         }
         return () => clearInterval(interval);
-    }, [recording, timer]);
+    }, [recording, timer, handleStopRecording]);
 
-    const sendAudioToBackend = async (audioBlob) => {
+
+    const sendAudioToBackend = useCallback(async (audioBlob) => {
         const formData = new FormData();
         formData.append("voice_sample", audioBlob);
 
@@ -212,14 +227,16 @@ const LoginRegister = () => {
             console.error("Error sending audio to backend:", error);
             return { success: false, error: error.message };
         }
-    };
+    }, [apiUrl]);
+
 
     useEffect(() => {
         if (!recording && audioChunks.length > 0) {
             const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
             sendAudioToBackend(audioBlob);
         }
-    }, [recording]);
+    }, [recording, audioChunks, sendAudioToBackend]);
+
 
     const handleVoiceLogin = async () => {
         try {
@@ -234,7 +251,7 @@ const LoginRegister = () => {
 
                 if (result.success) {
                     console.log("Voice authentication successful");
-                    // Navigate to dashboard or provide success feedback
+                    window.location.href = "/profile";
                 } else {
                     console.log("Voice authentication failed");
                     setLoginFailedAttempts((prev) => prev + 1);
@@ -242,25 +259,64 @@ const LoginRegister = () => {
             };
 
             recorder.start();
-            setTimeout(() => recorder.stop(), 5000); // Stop recording after 5 seconds
+            setTimeout(() => recorder.stop(), 5000);
         } catch (error) {
             console.error("Error accessing microphone for voice login:", error);
         }
     };
 
-    const sendRegistrationData = async (userData) => {
-        const response = await fetch(`${apiUrl}${process.env.REACT_APP_REGISTER_ENDPOINT}`, {
-            method: "POST",
-            body: JSON.stringify(userData),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-    
-        const data = await response.json();
-        console.log("Registration Response:", data);
-        return data;
+    const sendRegistrationData = async (userData, audioBlob) => {
+        const formData = new FormData();
+        formData.append("username", userData.username);
+        formData.append("email", userData.email);
+        formData.append("password", userData.password);
+        formData.append("voice_sample", audioBlob);
+
+        try {
+            const response = await fetch(`${apiUrl}${process.env.REACT_APP_REGISTER_ENDPOINT}`, {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log("Registration Response:", result);
+            return result;
+        } catch (error) {
+            console.error("Error during registration:", error);
+            return { success: false, error: error.message };
+        }
     };
+
+    const handleRegister = async (e) => {
+        e.preventDefault();
+
+        const username = e.target.username.value;
+        const email = e.target.email.value;
+        const password = e.target.password.value;
+
+        if (!audioChunks.length) {
+            console.error("No voice sample recorded.");
+            return;
+        }
+
+        const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+
+        const userData = { username, email, password };
+        const result = await sendRegistrationData(userData, audioBlob);
+
+        if (result.success) {
+            console.log("Registration successful!");
+            window.location.href = "/profile"; // Redirect to profile page
+        } else {
+            console.log("Registration failed:", result.error);
+        }
+    };
+
+
 
     return (
         <Wrapper active={action}>
@@ -289,7 +345,7 @@ const LoginRegister = () => {
                                 <label>
                                     <input type="checkbox" /> Remember me
                                 </label>
-                                <a href="#">Forgot password?</a>
+                                <InLink type="button">Forgot password?</InLink>
                             </RememberForgot>
                             <Button type="submit">Login</Button>
                         </>)
@@ -297,24 +353,25 @@ const LoginRegister = () => {
 
                     <RegisterLink>
                         <p>
-                            Don't have an account? <a href="#" onClick={registerLink}>Register</a>
+                            Don't have an account?
+                            <InLink type="button" onClick={registerLink}>Register</InLink>
                         </p>
                     </RegisterLink>
                 </Form>
             </FormBox>
             <FormBox register active={action}>
-                <Form>
+                <Form onSubmit={handleRegister}>
                     <h2>Registration</h2>
                     <InputBox>
-                        <input type="text" placeholder="Username" required />
+                        <input type="text" name="username" placeholder="Username" required />
                         <FaUser className="icons" />
                     </InputBox>
                     <InputBox>
-                        <input type="email" placeholder="Email" required />
+                        <input type="email" name="email" placeholder="Email" required />
                         <FaEnvelope className="icons" />
                     </InputBox>
                     <InputBox>
-                        <input type="password" placeholder="Password" required />
+                        <input type="password" name="password" placeholder="Password" required />
                         <FaLock className="icons" />
                     </InputBox>
 
@@ -334,14 +391,15 @@ const LoginRegister = () => {
                             />{" "}
                             I agree to the T&C
                         </label>
-                        <a href="#">Terms & conditions</a>
+                        <InLink type="button">Terms & conditions</InLink>
                     </RememberForgot>
                     <Button type="submit" disabled={!agreeTnC || recording}>
                         Register
                     </Button>
                     <RegisterLink>
                         <p>
-                            Already have an account? <a href="#" onClick={loginLink}>Login</a>
+                            Already have an account?
+                            <InLink type="button" onClick={loginLink}>Login</InLink>
                         </p>
                     </RegisterLink>
                 </Form>
