@@ -28,6 +28,3 @@ class AntiSpoofing:
         prediction_percentage = np.max(prediction[0]) * 100
 
         return predicted_label, f"{prediction_percentage:.2f}"
-    
-
-antispoofing = AntiSpoofing()
