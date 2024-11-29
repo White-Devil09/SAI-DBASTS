@@ -1,5 +1,6 @@
 import tenseal as ts
 import librosa
+import io
 
 # Global context for TenSEAL (keep it secure in production)
 global_context = None
@@ -24,22 +25,33 @@ def get_context():
 
 def encrypt_voice_data(voice_vector):
     """Encrypt a voice feature vector"""
-    context = get_context()
-    return ts.ckks_vector(context, voice_vector).serialize()
+    if isinstance(voice_vector, list) and all(isinstance(x, (int, float)) for x in voice_vector):
+        # Get the context from TenSEAL
+        context = get_context()  # Make sure get_context() is defined elsewhere
+        
+        # Create a CKKS vector and serialize it
+        encrypted_vector = ts.ckks_vector(context, voice_vector)
+        return encrypted_vector.serialize()
+    else:
+        print(type(voice_vector))
+        raise ValueError("voice_vector must be a list of numerical values (int or float)")
+
 
 def decrypt_voice_data(encrypted_voice):
     """Decrypt encrypted voice data"""
     context = get_context()
     return ts.ckks_vector_from(context, encrypted_voice).decrypt()
 
-def extract_mfcc(file_path, n_mfcc=13):
+def extract_mfcc(audio_data, n_mfcc=13):
     """Extract MFCC features from an audio file."""
+    file_path = io.BytesIO(audio_data)
     y, sr = librosa.load(file_path, sr=None)  # Load audio file with original sampling rate
     mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
     return mfcc.flatten().tolist()
 
-def extract_log_mel_spectrogram(file_path):
+def extract_log_mel_spectrogram(audio_data):
     """Extract Log-Mel Spectrogram features from an audio file."""
+    file_path = io.BytesIO(audio_data)
     y, sr = librosa.load(file_path, sr=None)
     mel_spectrogram = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128, fmax=8000)
     log_mel_spectrogram = librosa.power_to_db(mel_spectrogram)

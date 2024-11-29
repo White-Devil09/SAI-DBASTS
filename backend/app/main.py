@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from .database import SessionLocal, engine
@@ -49,14 +49,29 @@ def get_db():
         db.close()
 
 @app.post("/api/register")
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    existing_user = get_user_by_email(db, user.email)
+async def register_user(
+    username: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    audio: UploadFile = Form(...),
+    db: Session = Depends(get_db)
+):
+    # Check if the email is already registered
+    existing_user = get_user_by_email(db, email)
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    # Placeholder voice data, to be replaced by actual audio file upload later
-    voice_data = b"dummy_voice_data"  
-    create_user(db, email=user.email, password=user.password, voice_data=voice_data)
+        return {"message": "User already exist"}
+    
+    # Read the uploaded audio file
+    try:
+        audio_data = await audio.read()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to process audio file: {str(e)}")
+    
+    voice_data = extract_mfcc(audio_data)
+    
+    # Store the user with the audio data
+    create_user(db, username=username, email=email, password=password, voice_data=voice_data)
+    
     return {"message": "User registered successfully"}
 
 @app.post("/api/upload-voice")

@@ -270,7 +270,7 @@ const LoginRegister = () => {
         formData.append("username", userData.username);
         formData.append("email", userData.email);
         formData.append("password", userData.password);
-        formData.append("voice_sample", audioBlob);
+        formData.append("audio", audioBlob);
 
         try {
             const response = await fetch(`${apiUrl}${process.env.REACT_APP_REGISTER_ENDPOINT}`, {
@@ -310,7 +310,6 @@ const LoginRegister = () => {
 
         if (result.success) {
             console.log("Registration successful!");
-            window.location.href = "/profile"; // Redirect to profile page
         } else {
             console.log("Registration failed:", result.error);
         }
