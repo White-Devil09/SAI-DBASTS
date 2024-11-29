@@ -17,4 +17,5 @@ def create_user(db: Session,username: str, email: str, password: str, voice_data
     return db_user
 
 def verify_user_password(db_user: User, password: str):
-    return checkpw(password.encode('utf-8'), db_user.password_hash)
+    stored_password = bytes.fromhex(db_user.password_hash[2:])
+    return checkpw(password.encode('utf-8'), stored_password)
