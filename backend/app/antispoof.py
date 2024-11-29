@@ -27,4 +27,6 @@ class AntiSpoofing:
         predicted_label = self.labels[np.argmax(prediction[0])]
         prediction_percentage = np.max(prediction[0]) * 100
 
+        print(f"Predicted label: {predicted_label}, Prediction percentage: {prediction_percentage:.2f}")
+
         return predicted_label, f"{prediction_percentage:.2f}"
