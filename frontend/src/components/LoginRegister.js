@@ -153,6 +153,9 @@ const LoginRegister = () => {
     const [timer, setTimer] = useState(10);
     const [mediaRecorder, setMediaRecorder] = useState(null);
     const [audioChunks, setAudioChunks] = useState([]);
+    const [email, setEmail] = React.useState("");
+    const [password, setPassword] = React.useState("");
+
 
     const registerLink = () => setAction(true);
     const loginLink = () => setAction(false);
@@ -204,11 +207,9 @@ const LoginRegister = () => {
     }, [recording, timer, handleStopRecording]);
 
 
-    const sendAudioToBackend = useCallback(async (audioBlob) => {
+    const sendAudioToBackend = useCallback(async (audioBlob, endpoint) => {
         const formData = new FormData();
-        formData.append("voice_sample", audioBlob);
-
-        const endpoint = process.env.REACT_APP_UPLOAD_VOICE_ENDPOINT;
+        formData.append("audio", audioBlob);
 
         try {
             const response = await fetch(`${apiUrl}${endpoint}`, {
@@ -315,6 +316,31 @@ const LoginRegister = () => {
         }
     };
 
+    const handleLogin = async () => {
+        try {
+            const endpoint = `${process.env.REACT_APP_API_URL}${process.env.REACT_APP_LOGIN_ENDPOINT}`;
+            const response = await fetch(endpoint, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            });
+    
+            if (response.ok) {
+                const data = await response.json();
+                console.log(data.message); // "Login successful"
+                window.location.href = "/profile";
+            } else {
+                const errorData = await response.json();
+                console.error("Login failed:", errorData.detail);
+                alert("Invalid credentials. Please try again.");
+            }
+        } catch (error) {
+            console.error("Error during login:", error);
+            alert("An error occurred. Please try again.");
+        }
+    };
+    
+
 
 
     return (
@@ -325,7 +351,10 @@ const LoginRegister = () => {
 
                     {loginFailedAttempts < 3 ? (
                         <MicContainer>
-                            <MicButton onClick={handleVoiceLogin}>
+                            <MicButton onClick={(event) => {
+                                event.preventDefault();
+                                handleVoiceLogin();
+                            }}>
                                 <FaMicrophone />
                             </MicButton>
                             <p>Use your voice to log in</p>
@@ -333,11 +362,23 @@ const LoginRegister = () => {
                     ) : (
                         <>
                             <InputBox>
-                                <input type="text" placeholder="Username" required />
-                                <FaUser className="icons" />
+                                <input
+                                    type="email"
+                                    placeholder="Email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
+                                <FaEnvelope className="icons" />
                             </InputBox>
                             <InputBox>
-                                <input type="password" placeholder="Password" required />
+                                <input
+                                    type="password"
+                                    placeholder="Password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                />
                                 <FaLock className="icons" />
                             </InputBox>
                             <RememberForgot>
@@ -346,8 +387,11 @@ const LoginRegister = () => {
                                 </label>
                                 <InLink type="button">Forgot password?</InLink>
                             </RememberForgot>
-                            <Button type="submit">Login</Button>
-                        </>)
+                            <Button type="button" onClick={handleLogin}>
+                                Login
+                            </Button>
+                        </>
+                    )
                     }
 
                     <RegisterLink>

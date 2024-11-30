@@ -2,15 +2,15 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, UploadFil
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from .database import SessionLocal, engine
-from .models import Base
+from .models import Base, User
 from .crud import get_user_by_email, create_user, verify_user_password
-from .schemas import UserCreate, LoginRequest
-from .encryption import encrypt_voice_data, decrypt_voice_data
-from .encryption import extract_mfcc, extract_log_mel_spectrogram
+from .schemas import LoginRequest
+from .encryption import  decrypt_voice_data, encrypt_voice_data
+from .encryption import extract_mfcc
 from .antispoof import AntiSpoofing
-import shutil
 from collections import defaultdict
-from datetime import datetime, timedelta
+import shutil
+from datetime import datetime
 import logging
 from pythonjsonlogger import jsonlogger
 
@@ -77,9 +77,28 @@ def login_user(request: LoginRequest, db: Session = Depends(get_db)):
     return {"message": "Login successful"}
 
 @app.post("/api/login/voice")
-def login_with_voice(voice_file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def login_with_voice(audio: UploadFile = File(...), db: Session = Depends(get_db)):
     global activity_log
     now = datetime.now()
 
+    try:
+        audio_data = await audio.read()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to process audio file: {str(e)}")
     
 
+    spoof_score = anti_spoofing_model.predict(audio_data)
+    if spoof_score[0] == "FAKE":
+        logger.info(f"Spoofing detected for voice login attempt at {now}")
+        raise HTTPException(status_code=400, detail="Spoofing detected")
+    
+    voice_data = extract_mfcc(audio_data)
+    users = db.query(User).all()
+    for user in users:
+        decrypted_voice = decrypt_voice_data(user.voice_data)
+        if decrypted_voice == voice_data:
+            logger.info(f"Successful voice login attempt for user {user.email} at {now}")
+            return {"message": "Login successful"}
+        
+    logger.info(f"Failed voice login attempt at {now}")
+    raise HTTPException(status_code=401, detail="No voice match Login failed")
