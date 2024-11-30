@@ -4,8 +4,8 @@ import { FaUser, FaLock, FaEnvelope, FaMicrophone, FaMicrophoneSlash } from "rea
 
 const Wrapper = styled.div`
   position: relative;
-  width: 420px;
-  height: ${(props) => (props.active ? "580px" : "450px")};
+  width: ${(props) => (props.active ? "520px" : "420px")};
+  height: ${(props) => (props.active ? "680px" : "450px")};
   background: transparent;
   border: 2px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(30px);
@@ -324,7 +324,7 @@ const LoginRegister = () => {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
             });
-    
+
             if (response.ok) {
                 const data = await response.json();
                 console.log(data.message); // "Login successful"
@@ -339,7 +339,7 @@ const LoginRegister = () => {
             alert("An error occurred. Please try again.");
         }
     };
-    
+
 
 
 
@@ -417,6 +417,11 @@ const LoginRegister = () => {
                         <input type="password" name="password" placeholder="Password" required />
                         <FaLock className="icons" />
                     </InputBox>
+
+                    <div style={{ textAlign: "center"}}>
+                        <p><b>Read following sentence while recording</b></p>
+                        <p>The bright sun rose over the green hills, and the birds began to sing a cheerful morning tune.</p>
+                    </div>
 
                     <MicContainer>
                         <MicButton onClick={handleStartRecording} disabled={recording}>
